@@ -8,6 +8,7 @@ public class Brick : MonoBehaviour
         if (collision.gameObject.CompareTag("Ball"))
         {
             Destroy(gameObject);
+        
         }
     }
 }

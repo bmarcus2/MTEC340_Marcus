@@ -11,7 +11,7 @@ public class PaddleBehavior : MonoBehaviour
     
     private Rigidbody2D _rb;
 
-    
+    // public float Limit = 3.5f;
     private void Start()
     {
         _rb = GetComponent<Rigidbody2D>();
