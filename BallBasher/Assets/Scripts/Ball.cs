@@ -1,10 +1,13 @@
+using Unity.Collections.Tests.CoreCLR.TestJobs;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public class BallBehavior : MonoBehaviour
 {
+    [Header("Ball Properties")]
     [SerializeField] private float _launchForce = 7.0f;
     [SerializeField] private float _speedIncrement = 1.1f;
+    [SerializeField] private float _steepnessThreshhold = 0.5f;
     [SerializeField] private float _paddleInfluence = 0.4f;
 
     private Rigidbody2D _rb;
@@ -14,7 +17,7 @@ public class BallBehavior : MonoBehaviour
     [SerializeField] private AudioClip _paddleHit;
     [SerializeField] private AudioClip _scorePoint;
 
-    void Start()
+    private void Start()
     {
         _rb = GetComponent<Rigidbody2D>();
         _source = GetComponent<AudioSource>();
@@ -22,20 +25,36 @@ public class BallBehavior : MonoBehaviour
         ResetBall();
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    private void Update()
+    {
+        
+        _rb.simulated = GameBehavior.Instance.State == Utilities.GameState.Play;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Brick"))
         {
-            Debug.Log("Brick broken!");
+            Brick brick = collision.gameObject.GetComponent<Brick>();
 
-            GameBehavior.Instance.ScorePoint();
-
-            if (_source != null && _scorePoint != null)
+            if (brick != null)
             {
-                _source.PlayOneShot(_scorePoint);
-            }
+               
+                bool brickDestroyed = brick.TakeDamage();
 
-            Destroy(collision.gameObject);
+                
+                if (brickDestroyed)
+                {
+                    Debug.Log("Brick broken!");
+
+                    GameBehavior.Instance.ScorePoint();
+
+                    if (_source != null && _scorePoint != null)
+                    {
+                        _source.PlayOneShot(_scorePoint);
+                    }
+                }
+            }
         }
         else if (collision.gameObject.CompareTag("Paddle"))
         {
@@ -83,6 +102,17 @@ public class BallBehavior : MonoBehaviour
 
         Vector2 direction = Random.insideUnitCircle.normalized;
 
+        CheckSteepness(ref direction);
+
         _rb.AddForce(direction * _launchForce, ForceMode2D.Impulse);
+    }
+
+    private void CheckSteepness(ref Vector2 direction)
+    {
+        if (Mathf.Abs(direction.x) < _steepnessThreshhold)
+        {
+            direction.x += 0.5f * Mathf.Sign(direction.x);
+            direction.Normalize();
+        }
     }
 }
